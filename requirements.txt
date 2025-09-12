@@ -3,7 +3,9 @@ uvicorn==0.24.0
 supabase==2.0.0
 python-dotenv==1.0.0
 requests==2.31.0
-pydantic==2.5.0
+# Pin to versions with manylinux wheels to avoid Rust build on Render
+pydantic==2.7.4
+pydantic-core==2.18.4
 twilio==8.10.0
 schedule==1.2.0
 python-multipart==0.0.6
