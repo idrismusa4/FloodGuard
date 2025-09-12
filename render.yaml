@@ -3,8 +3,6 @@ services:
     name: floodguard-app
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerBuildArgs:
-      - BUILDKIT_INLINE_CACHE=1
     autoDeploy: true
     plan: free
     envVars:
