@@ -6,6 +6,7 @@ FROM python:3.11-slim as backend
 WORKDIR /app/backend
 
 # Install system dependencies
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
@@ -31,8 +32,8 @@ WORKDIR /app/frontend
 # Copy frontend package files
 COPY frontend/package*.json ./
 
-# Install frontend dependencies
-RUN npm ci
+# Install frontend dependencies (use npm install for broader CI compatibility)
+RUN npm install --legacy-peer-deps
 
 # Copy frontend source code
 COPY frontend/ .
@@ -46,6 +47,7 @@ FROM python:3.11-slim as production
 WORKDIR /app
 
 # Install system dependencies
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     gcc \
     nginx \
@@ -61,8 +63,8 @@ COPY backend/ ./backend/
 # Copy built frontend from frontend stage
 COPY --from=frontend /app/frontend/build ./frontend/build
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/sites-available/default
+# Copy nginx configuration (use conf.d to avoid managing sites-enabled symlinks)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose ports
 EXPOSE 80 8000
