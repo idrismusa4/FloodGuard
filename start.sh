@@ -13,6 +13,10 @@ echo "Starting FastAPI backend..."
 cd /app/backend
 uvicorn main:app --host 0.0.0.0 --port 8000 &
 
+# Start nginx in foreground (container entrypoint)
+nginx -g "daemon off;"
+
+
 # Wait for backend to be ready
 echo "Waiting for backend to be ready..."
 sleep 10
