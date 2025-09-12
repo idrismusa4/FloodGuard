@@ -64,7 +64,7 @@ COPY backend/ ./backend/
 COPY --from=frontend /app/frontend/build ./frontend/build
 
 # Copy nginx configuration (use conf.d to avoid managing sites-enabled symlinks)
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/sites-available/default
 
 # Expose ports
 EXPOSE 80 8000

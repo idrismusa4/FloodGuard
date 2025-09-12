@@ -4,16 +4,16 @@
 
 echo "🛡️ Starting FloodGuardian AI..."
 
-# Start Nginx
-echo "Starting Nginx..."
-service nginx start
-
-# Start the backend API
+# Start FastAPI (background)
 echo "Starting FastAPI backend..."
 cd /app/backend
 uvicorn main:app --host 0.0.0.0 --port 8000 &
 
-# Start nginx in foreground (container entrypoint)
+# Optional: start flood monitor in background
+# python jobs/flood_monitor.py --continuous &
+
+# Start nginx in foreground (container stays alive)
+echo "Starting Nginx..."
 nginx -g "daemon off;"
 
 
