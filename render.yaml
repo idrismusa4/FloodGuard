@@ -1,7 +1,7 @@
 services:
   - type: web
     name: floodguard-backend
-    env: python
+    runtime: python
     rootDir: backend
     buildCommand: pip install --no-cache-dir -r ../requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -25,11 +25,14 @@ services:
       - key: ENVIRONMENT
         value: production
 
-  - type: static_site
+  - type: web
     name: floodguard-frontend
+    runtime: node
     rootDir: frontend
-    buildCommand: npm install --legacy-peer-deps && npm run build
-    staticPublishPath: build
+    buildCommand: npm ci --legacy-peer-deps && npm run build
+    startCommand: npx serve -s build -l $PORT
+    plan: free
+    autoDeploy: true
     envVars:
       - key: REACT_APP_API_URL
         sync: false
