@@ -1,0 +1,42 @@
+name: floodguard-app
+services:
+- name: floodguard-web
+  source_dir: /
+  github:
+    repo: your-username/FloodGuard
+    branch: main
+  run_command: ./start.sh
+  environment_slug: docker
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  http_port: 80
+  routes:
+  - path: /
+  envs:
+  - key: SUPABASE_URL
+    scope: RUN_TIME
+    type: SECRET
+  - key: SUPABASE_KEY
+    scope: RUN_TIME
+    type: SECRET
+  - key: EARTH2_API_KEY
+    scope: RUN_TIME
+    type: SECRET
+  - key: TWILIO_ACCOUNT_SID
+    scope: RUN_TIME
+    type: SECRET
+  - key: TWILIO_AUTH_TOKEN
+    scope: RUN_TIME
+    type: SECRET
+  - key: TWILIO_PHONE_NUMBER
+    scope: RUN_TIME
+    type: SECRET
+  - key: MAPS_API_KEY
+    scope: RUN_TIME
+    type: SECRET
+  - key: ENVIRONMENT
+    value: production
+    scope: RUN_TIME
+  - key: REACT_APP_API_URL
+    value: ""
+    scope: RUN_TIME
