@@ -1,25 +1,28 @@
-## Deploy FloodGuard: Backend (Render) + Frontend (Vercel)
+## Deploy FloodGuard: Single Service on Render
 
 1) Push this repo to GitHub/GitLab.
 
 2) In Render, create a Blueprint from the repo. It will detect `render.yaml` and create:
-   - Web Service `floodguard-backend` (FastAPI only)
+   - Web Service `floodguard-app` (FastAPI + React via Docker)
 
-3) Set environment variables in Render (backend):
+3) Set environment variables in Render:
    - `SUPABASE_URL`, `SUPABASE_KEY`, `EARTH2_API_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `MAPS_API_KEY`.
    - `ENVIRONMENT=production` (already set in blueprint; verify)
-   - `ALLOWED_ORIGINS` = your Vercel domain(s), comma-separated (e.g. `https://floodguard-frontend.vercel.app,https://www.yourdomain.com`).
+   - `REACT_APP_API_URL` = leave empty (uses relative URLs in production)
 
-4) Deploy. The backend binds to `$PORT` automatically.
+4) Deploy. The service will:
+   - Build React frontend and serve it via Nginx
+   - Run FastAPI backend on port 8000
+   - Proxy API requests from Nginx to FastAPI
+   - Serve everything on port 80
 
-### Frontend on Vercel
-1) In Vercel, import the repo and set the project root to `frontend`.
-2) Build Command: `npm run build` (Vercel detects CRA). Output Directory: `build`.
-3) Add Environment Variable: `REACT_APP_API_URL` = your Render backend URL (e.g. `https://floodguard-backend.onrender.com`).
-4) Deploy. SPA routing is handled by `vercel.json`.
+5) Access your app:
+   - Frontend: `<service-url>/` (e.g., https://floodguard-app.onrender.com/)
+   - API: `<service-url>/health`, `<service-url>/docs`, etc.
 
 Notes
-- CORS is currently `*` in `backend/main.py`. Tighten for production if needed.
-- `frontend/static.json` enables SPA routing on Render, serving `index.html` for client routes.
+- Single Docker container serves both frontend and backend
+- Nginx handles SPA routing and API proxying
+- No CORS issues since everything runs on the same domain
 
 
