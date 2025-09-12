@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloodGuardian AI - Map Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #1f2937;
+            margin: 0;
+        }
+        .header p {
+            color: #6b7280;
+            margin: 8px 0 0 0;
+        }
+        #map {
+            height: 600px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #374151;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid #d1d5db;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 10px;
+        }
+        .btn:hover {
+            background: #2563eb;
+        }
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f0f9ff;
+            color: #0369a1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ FloodGuardian AI - Interactive Map</h1>
+            <p>Real-time flood predictions across Nigerian regions</p>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #10b981;"></div>
+                <span>Low Risk (0-40%)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #f59e0b;"></div>
+                <span>Medium Risk (40-70%)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ef4444;"></div>
+                <span>High Risk (70-100%)</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="loadPredictions()">🔄 Load Predictions</button>
+            <button class="btn" onclick="clearMap()">🗑️ Clear Map</button>
+        </div>
+
+        <div id="status" class="status">
+            Click "Load Predictions" to fetch flood data from the API
+        </div>
+
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([9.0765, 7.3986], 6);
+
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Nigerian region coordinates
+        const regionCoordinates = {
+            'Abuja': [9.0765, 7.3986],
+            'Lagos': [6.5244, 3.3792],
+            'Kano': [12.0022, 8.5920],
+            'Port Harcourt': [4.8156, 7.0498],
+            'Ibadan': [7.3776, 3.9470],
+            'Kaduna': [10.5200, 7.4382],
+            'Benin City': [6.3350, 5.6037],
+            'Jos': [9.9285, 8.8921],
+            'Maiduguri': [11.8333, 13.1500],
+            'Sokoto': [13.0059, 5.2476],
+            'Ilorin': [8.5000, 4.5500],
+            'Enugu': [6.4413, 7.4988],
+            'Abeokuta': [7.1557, 3.3451],
+            'Owerri': [5.4833, 7.0333],
+            'Calabar': [4.9515, 8.3223]
+        };
+
+        let markers = [];
+        let circles = [];
+
+        function getSeverityColor(severity) {
+            if (severity >= 0.7) return '#ef4444'; // Red - High risk
+            if (severity >= 0.4) return '#f59e0b'; // Orange - Medium risk
+            return '#10b981'; // Green - Low risk
+        }
+
+        function getSeverityRadius(severity) {
+            return Math.max(20, severity * 100);
+        }
+
+        function getRiskLevel(severity) {
+            if (severity >= 0.7) return 'HIGH';
+            if (severity >= 0.4) return 'MEDIUM';
+            return 'LOW';
+        }
+
+        async function loadPredictions() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = 'Loading flood predictions...';
+            statusDiv.style.background = '#fef3c7';
+            statusDiv.style.color = '#92400e';
+
+            try {
+                // Fetch predictions from your backend
+                const response = await fetch('http://localhost:8000/predictions/');
+                const data = await response.json();
+
+                if (data.status === 'success' && data.predictions) {
+                    clearMap();
+                    
+                    // Process each prediction
+                    data.predictions.forEach(prediction => {
+                        const region = prediction.region;
+                        const severity = prediction.severity;
+                        const coords = regionCoordinates[region];
+
+                        if (coords) {
+                            const color = getSeverityColor(severity);
+                            const radius = getSeverityRadius(severity);
+                            const riskLevel = getRiskLevel(severity);
+
+                            // Add risk circle
+                            const circle = L.circle(coords, {
+                                radius: radius * 1000, // Convert to meters
+                                color: color,
+                                fillColor: color,
+                                fillOpacity: 0.3,
+                                weight: 2
+                            }).addTo(map);
+                            circles.push(circle);
+
+                            // Add marker with popup
+                            const popupContent = `
+                                <div style="min-width: 200px;">
+                                    <h3 style="margin: 0 0 8px 0; color: #1f2937;">${region}</h3>
+                                    <p style="margin: 4px 0; font-size: 14px;"><strong>Risk Level:</strong> <span style="color: ${color};">${riskLevel}</span></p>
+                                    <p style="margin: 4px 0; font-size: 14px;"><strong>Severity:</strong> ${(severity * 100).toFixed(1)}%</p>
+                                    <p style="margin: 4px 0; font-size: 14px;"><strong>Precipitation:</strong> ${prediction.prediction_data?.precipitation_mm?.toFixed(1) || 'N/A'} mm</p>
+                                    <p style="margin: 4px 0; font-size: 14px;"><strong>Water Level:</strong> ${prediction.prediction_data?.water_level_m?.toFixed(1) || 'N/A'} m</p>
+                                    <p style="margin: 4px 0; font-size: 14px;"><strong>Last Updated:</strong> ${new Date(prediction.created_at).toLocaleString()}</p>
+                                </div>
+                            `;
+
+                            const marker = L.marker(coords)
+                                .bindPopup(popupContent)
+                                .addTo(map);
+                            markers.push(marker);
+                        }
+                    });
+
+                    statusDiv.textContent = `✅ Loaded ${data.predictions.length} flood predictions successfully!`;
+                    statusDiv.style.background = '#f0fdf4';
+                    statusDiv.style.color = '#166534';
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            } catch (error) {
+                console.error('Error loading predictions:', error);
+                statusDiv.textContent = `❌ Error loading predictions: ${error.message}`;
+                statusDiv.style.background = '#fef2f2';
+                statusDiv.style.color = '#dc2626';
+            }
+        }
+
+        function clearMap() {
+            // Remove all markers and circles
+            markers.forEach(marker => map.removeLayer(marker));
+            circles.forEach(circle => map.removeLayer(circle));
+            markers = [];
+            circles = [];
+        }
+
+        // Load predictions on page load
+        window.addEventListener('load', () => {
+            setTimeout(loadPredictions, 1000);
+        });
+    </script>
+</body>
+</html>
