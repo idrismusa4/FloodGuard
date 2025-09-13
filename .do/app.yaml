@@ -12,7 +12,7 @@ services:
   http_port: 80
   routes:
   - path: /
-  dockerfile_path: Dockerfile.production
+  dockerfile_path: Dockerfile
   envs:
   - key: SUPABASE_URL
     scope: RUN_TIME
