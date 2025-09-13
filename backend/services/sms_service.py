@@ -26,10 +26,10 @@ class SMSService:
     
     def send_sms(self, phone: str, message: str, from_number: str = None) -> bool:
         """
-        Send SMS to a phone number
+        Send SMS to a phone number (for demo purposes, always sends to Twilio number)
         
         Args:
-            phone: Recipient phone number
+            phone: Recipient phone number (ignored for demo)
             message: SMS message content
             from_number: Sender number (optional)
             
@@ -39,28 +39,31 @@ class SMSService:
         try:
             if not self.client:
                 # For development, just log the message
-                print(f"📱 SMS to {phone}: {message}")
+                print(f"📱 SMS to {self.from_number} (demo): {message}")
                 return True
             
+            # For demo purposes, always send to the Twilio number
+            demo_message = f"[DEMO - Originally for {phone}] {message}"
+            
             message = self.client.messages.create(
-                body=message,
+                body=demo_message,
                 from_=from_number or self.from_number,
-                to=phone
+                to=self.from_number  # Always send to Twilio number for demo
             )
             
-            print(f"SMS sent successfully. SID: {message.sid}")
+            print(f"SMS sent successfully to {self.from_number} (demo). SID: {message.sid}")
             return True
             
         except Exception as e:
-            print(f"Failed to send SMS to {phone}: {e}")
+            print(f"Failed to send SMS to {self.from_number}: {e}")
             return False
     
     def send_bulk_sms(self, phone_numbers: list, message: str) -> dict:
         """
-        Send SMS to multiple phone numbers
+        Send SMS to multiple phone numbers (for demo purposes, sends to Twilio number)
         
         Args:
-            phone_numbers: List of phone numbers
+            phone_numbers: List of phone numbers (ignored for demo)
             message: SMS message content
             
         Returns:
@@ -68,12 +71,17 @@ class SMSService:
         """
         results = {"sent": 0, "failed": 0, "errors": []}
         
-        for phone in phone_numbers:
-            if self.send_sms(phone, message):
-                results["sent"] += 1
+        # For demo purposes, send one message to Twilio number with all recipients listed
+        if phone_numbers:
+            demo_message = f"[DEMO - Bulk alert for {len(phone_numbers)} recipients: {', '.join(phone_numbers)}] {message}"
+            
+            if self.send_sms(self.from_number, demo_message):
+                results["sent"] = len(phone_numbers)  # Count as if sent to all
+                results["failed"] = 0
             else:
-                results["failed"] += 1
-                results["errors"].append(f"Failed to send to {phone}")
+                results["sent"] = 0
+                results["failed"] = len(phone_numbers)
+                results["errors"].append(f"Failed to send bulk SMS to {self.from_number}")
         
         return results
 
